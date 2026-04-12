@@ -6,6 +6,11 @@ from app.services.motivation_service import (
 
 motivation_bp = Blueprint("motivation", __name__)
 
+@motivation_bp.route("/", methods=["POST"])
+def index():
+    return "API telah berjalan! Dibuat oleh Abdullah Ubaid"
+    
+
 @motivation_bp.route("/motivations/generate", methods=["POST"])
 def generate():
     data = request.get_json()
