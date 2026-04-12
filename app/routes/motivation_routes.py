@@ -6,7 +6,7 @@ from app.services.motivation_service import (
 
 motivation_bp = Blueprint("motivation", __name__)
 
-@motivation_bp.route("/", methods=["POST"])
+@motivation_bp.route("/", methods=["GET"])
 def index():
     return "API telah berjalan! Dibuat oleh Abdullah Ubaid"
     
