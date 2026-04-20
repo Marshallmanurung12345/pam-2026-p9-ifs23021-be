@@ -1,99 +1,190 @@
+## ═══════════════════════════════════════════════════
+## Smart Tourism Samosir — API Test File
+## ═══════════════════════════════════════════════════
+
 ## Global Variables
 @baseurl=http://127.0.0.1:5000
 
-## Health Check
+## Setelah login, copy token ke sini:
+@token=PASTE_TOKEN_DI_SINI
+
+## ───────────────────────────────────────────────────
+## HEALTH CHECK
+## ───────────────────────────────────────────────────
 GET {{baseurl}}/
-Content-Type: application/json
 ###
 
-## Generate Motivation
-# @name PostGenerateMotivation
-POST {{baseurl}}/motivations/generate
+## ───────────────────────────────────────────────────
+## AUTH
+## ───────────────────────────────────────────────────
+
+## Login Admin
+# @name LoginAdmin
+POST {{baseurl}}/auth/login
 Content-Type: application/json
 
 {
-  "theme": "belajar",
-  "total": 5
+  "username": "admin",
+  "password": "admin123"
 }
 ###
 
-## Response PostGenerateMotivation
-{
-  "data": [
-    "Setiap halaman yang kamu baca, setiap soal yang kamu selesaikan, adalah satu langkah lebih dekat ke impianmu.",
-    "Belajar bukan tentang kesempurnaan, tapi tentang kemajuan. Rayakan setiap sedikit pemahaman baru.",
-    "Pengetahuan adalah satu-satunya harta yang semakin banyak kamu berikan, semakin banyak yang kamu miliki.",
-    "Hari ini mungkin terasa sulit, tapi ingat: pohon oak yang kuat pun berawal dari biji yang kecil.",
-    "Jangan takut salah, takutlah jika berhenti mencoba. Setiap kesalahan adalah guru terbaik."
-  ],
-  "theme": "belajar",
-  "total": 5
-}
-###
-
-## Get Motivation
-# @name GetMotivations
-GET {{baseurl}}/motivations?page=1&per_page=10
+## Login Tester
+# @name LoginTester
+POST {{baseurl}}/auth/login
 Content-Type: application/json
+
+{
+  "username": "tester",
+  "password": "tester123"
+}
 ###
 
-## Response GetMotivations
+## Login — Password Salah (expect 401)
+POST {{baseurl}}/auth/login
+Content-Type: application/json
+
 {
-  "data": [
-    {
-      "created_at": "2026-04-11T11:35:35.327888",
-      "id": 13,
-      "text": "Jangan takut salah, takutlah jika berhenti mencoba. Setiap kesalahan adalah guru terbaik."
-    },
-    {
-      "created_at": "2026-04-11T11:35:35.327888",
-      "id": 12,
-      "text": "Hari ini mungkin terasa sulit, tapi ingat: pohon oak yang kuat pun berawal dari biji yang kecil."
-    },
-    {
-      "created_at": "2026-04-11T11:35:35.327888",
-      "id": 11,
-      "text": "Pengetahuan adalah satu-satunya harta yang semakin banyak kamu berikan, semakin banyak yang kamu miliki."
-    },
-    {
-      "created_at": "2026-04-11T11:35:35.327888",
-      "id": 10,
-      "text": "Belajar bukan tentang kesempurnaan, tapi tentang kemajuan. Rayakan setiap sedikit pemahaman baru."
-    },
-    {
-      "created_at": "2026-04-11T11:35:35.327888",
-      "id": 9,
-      "text": "Setiap halaman yang kamu baca, setiap soal yang kamu selesaikan, adalah satu langkah lebih dekat ke impianmu."
-    },
-    {
-      "created_at": "2026-04-11T11:09:11.289852",
-      "id": 8,
-      "text": "Pikiran yang terus dipupuk dengan ilmu akan selalu tumbuh, bahkan di tanah yang paling keras sekalipun."
-    },
-    {
-      "created_at": "2026-04-11T11:09:11.289852",
-      "id": 7,
-      "text": "Konsistensi dalam belajar, sekecil apapun, lebih berharga daripada usaha yang besar tapi hanya sesekali."
-    },
-    {
-      "created_at": "2026-04-11T11:09:11.289852",
-      "id": 6,
-      "text": "Belajar hari ini adalah investasi untuk semua impian yang akan kamu raih di masa depan."
-    },
-    {
-      "created_at": "2026-04-11T11:09:11.289852",
-      "id": 5,
-      "text": "Jangan takut salah, karena dari kesalahan itu ilmu yang sesungguhnya akan melekat erat dalam ingatanmu."
-    },
-    {
-      "created_at": "2026-04-11T11:09:11.289852",
-      "id": 4,
-      "text": "Setiap halaman yang kamu baca, setiap soal yang kamu pecahkan, adalah satu langkah lebih dekat ke versi terbaik dirimu."
-    }
-  ],
-  "page": 1,
-  "per_page": 10,
-  "total": 13,
-  "total_pages": 2
+  "username": "admin",
+  "password": "salah"
 }
+###
+
+## Profil User yang Sedang Login
+GET {{baseurl}}/auth/me
+Authorization: Bearer {{token}}
+###
+
+## ───────────────────────────────────────────────────
+## TOURIST SPOTS
+## ───────────────────────────────────────────────────
+
+## Get Semua Tempat Wisata (paginasi)
+GET {{baseurl}}/spots?page=1&per_page=10
+Authorization: Bearer {{token}}
+###
+
+## Filter by Kategori
+GET {{baseurl}}/spots?category=Alam
+Authorization: Bearer {{token}}
+###
+
+## Filter by Kategori + Search
+GET {{baseurl}}/spots?category=Budaya&search=simanindo
+Authorization: Bearer {{token}}
+###
+
+## Get Daftar Kategori
+GET {{baseurl}}/spots/categories
+Authorization: Bearer {{token}}
+###
+
+## Detail Tempat Wisata (id=1)
+GET {{baseurl}}/spots/1
+Authorization: Bearer {{token}}
+###
+
+## Tanpa Token — Harus 401
+GET {{baseurl}}/spots
+###
+
+## ───────────────────────────────────────────────────
+## AI REKOMENDASI WISATA
+## ───────────────────────────────────────────────────
+
+## Generate Rekomendasi
+# @name GenerateRekomendasi
+POST {{baseurl}}/recommendations/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "interest": "wisata alam dan petualangan outdoor",
+  "budget": "medium",
+  "duration": 3
+}
+###
+
+## Generate Rekomendasi Kuliner
+POST {{baseurl}}/recommendations/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "interest": "wisata kuliner dan budaya Batak"
+}
+###
+
+## Riwayat Rekomendasi
+GET {{baseurl}}/recommendations?page=1&per_page=10
+Authorization: Bearer {{token}}
+###
+
+## Detail Rekomendasi (id=1)
+GET {{baseurl}}/recommendations/1
+Authorization: Bearer {{token}}
+###
+
+## Hapus Rekomendasi (id=1)
+DELETE {{baseurl}}/recommendations/1
+Authorization: Bearer {{token}}
+###
+
+## ───────────────────────────────────────────────────
+## AI ITINERARY PERJALANAN
+## ───────────────────────────────────────────────────
+
+## Generate Itinerary 3 Hari — Keluarga
+# @name GenerateItinerary
+POST {{baseurl}}/itineraries/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "theme": "budaya dan kuliner Batak",
+  "duration_days": 3,
+  "budget": "medium",
+  "group_type": "family"
+}
+###
+
+## Generate Itinerary 2 Hari — Solo Backpacker
+POST {{baseurl}}/itineraries/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "theme": "alam dan petualangan",
+  "duration_days": 2,
+  "budget": "low",
+  "group_type": "solo"
+}
+###
+
+## Generate Itinerary — Validasi Error (duration_days > 7)
+POST {{baseurl}}/itineraries/generate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "theme": "liburan panjang",
+  "duration_days": 10,
+  "budget": "high",
+  "group_type": "couple"
+}
+###
+
+## Riwayat Itinerary
+GET {{baseurl}}/itineraries?page=1&per_page=10
+Authorization: Bearer {{token}}
+###
+
+## Detail Itinerary (id=1)
+GET {{baseurl}}/itineraries/1
+Authorization: Bearer {{token}}
+###
+
+## Hapus Itinerary (id=1)
+DELETE {{baseurl}}/itineraries/1
+Authorization: Bearer {{token}}
 ###
