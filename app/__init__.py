@@ -5,24 +5,20 @@ from flask_jwt_extended import JWTManager
 from app.config import Config
 from app.extensions import Base, engine
 
-
 def create_app():
     app = Flask(__name__)
-
     app.config["JWT_SECRET_KEY"] = Config.JWT_SECRET_KEY
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
-
     CORS(app, resources={r"/*": {"origins": "*"}})
-
     jwt = JWTManager(app)
 
     @jwt.unauthorized_loader
     def unauthorized_callback(reason):
-        return jsonify({"error": "Token tidak valid atau tidak ditemukan"}), 401
+        return jsonify({"error": "Token tidak valid"}), 401
 
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_data):
-        return jsonify({"error": "Token sudah kadaluarsa, silakan login kembali"}), 401
+        return jsonify({"error": "Token kadaluarsa"}), 401
 
     from app.models import user, tourist_spot, itinerary, recommendation  # noqa
     Base.metadata.create_all(bind=engine)
@@ -36,7 +32,6 @@ def create_app():
     from app.routes.spot_routes import spots_bp
     from app.routes.itinerary_routes import itinerary_bp
     from app.routes.recommendation_routes import recommendation_bp
-
     app.register_blueprint(auth_bp)
     app.register_blueprint(spots_bp)
     app.register_blueprint(itinerary_bp)
@@ -44,10 +39,6 @@ def create_app():
 
     @app.route("/")
     def index():
-        return jsonify({
-            "message": "Smart Tourism Samosir API",
-            "version": "1.0.0",
-            "status": "running"
-        })
+        return jsonify({"message": "Smart Tourism Samosir API", "status": "running"})
 
     return app
