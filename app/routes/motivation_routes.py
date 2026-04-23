@@ -4,6 +4,7 @@ from app.services.motivation_service import (
     create_motivations,
     get_all_motivations
 )
+from app.services.llm_service import LLMServiceError
 
 motivation_bp = Blueprint("motivation", __name__)
 
@@ -41,11 +42,19 @@ def generate():
             "data": result
         })
 
+    except LLMServiceError as e:
+        print(f"[motivation.generate] {e.message}")
+        return jsonify({
+            "error": e.message,
+            "query": theme,
+            "total": total,
+        }), e.status_code
+
     except Exception as e:
         print(f"[motivation.generate] {e}")
         traceback.print_exc()
         return jsonify({
-            "error": str(e),
+            "error": "Terjadi kesalahan saat membuat rekomendasi.",
             "query": theme,
             "total": total,
         }), 500
