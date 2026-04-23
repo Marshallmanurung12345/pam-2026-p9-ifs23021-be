@@ -7,7 +7,17 @@ from app.services.auth_service import seed_default_users
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(
+        app,
+        resources={
+            r"/*": {
+                "origins": "*",
+                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "expose_headers": ["Content-Type", "Authorization"],
+            }
+        },
+    )
     app.config["JWT_SECRET_KEY"] = Config.JWT_SECRET_KEY
     JWTManager(app)
 
