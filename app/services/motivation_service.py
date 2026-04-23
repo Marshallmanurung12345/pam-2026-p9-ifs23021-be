@@ -1,10 +1,11 @@
 from app.extensions import SessionLocal
 from app.models.motivation import Motivation
 from app.models.request_log import RequestLog
-from app.services.llm_service import generate_from_llm
-from app.utils.parser import parse_llm_response
 
 def create_motivations(theme: str, total: int):
+    from app.services.llm_service import generate_from_llm
+    from app.utils.parser import parse_llm_response
+
     session = SessionLocal()
 
     try:
