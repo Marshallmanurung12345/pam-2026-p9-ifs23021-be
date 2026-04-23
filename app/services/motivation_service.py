@@ -1,28 +1,35 @@
+import json
+
 from app.extensions import SessionLocal
 from app.models.motivation import Motivation
 from app.models.request_log import RequestLog
-
-def _build_motivation_texts(theme: str, total: int):
-    clean_theme = theme.strip()
-    templates = [
-        "Tema {theme} tidak butuh langkah besar, cukup satu langkah konsisten hari ini.",
-        "Saat proses terasa berat, ingat bahwa {theme} tetap tumbuh dari usaha kecil yang diulang.",
-        "Fokus pada kemajuan di tema {theme}, bukan pada rasa takut yang datang lebih dulu.",
-        "Setiap kegagalan dalam {theme} adalah data untuk mencoba dengan cara yang lebih tepat.",
-        "Jangan tunggu sempurna untuk mulai, karena {theme} justru kuat saat kamu terus bergerak.",
-        "Disiplin dalam {theme} akan membawa hasil bahkan ketika motivasi sedang rendah.",
-        "Kalau hari ini terasa lambat, tetap lanjutkan {theme}; pelan tetap lebih baik daripada berhenti.",
-        "Keberanian terbesar dalam {theme} sering dimulai dari keputusan sederhana untuk tidak menyerah.",
-        "Beri dirimu ruang untuk belajar, karena perjalanan {theme} memang dibangun dari proses.",
-        "Konsistensi pada {theme} hari ini adalah hadiah terbaik untuk dirimu di masa depan.",
-    ]
-    return [templates[i % len(templates)].format(theme=clean_theme) for i in range(total)]
+from app.services.llm_service import generate_from_llm
+from app.utils.parser import parse_recommendations_response
 
 def create_motivations(theme: str, total: int):
     session = SessionLocal()
 
     try:
-        motivations = _build_motivation_texts(theme, total)
+        prompt = f"""
+        Kamu adalah AI rekomendasi wisata untuk Pulau Samosir dan kawasan Danau Toba.
+        Berdasarkan query "{theme}", buat {total} rekomendasi wisata yang paling relevan di Samosir.
+        Gunakan bahasa Indonesia.
+        Balas dengan rekomendasi yang konkret dan terasa seperti panduan wisata.
+        Balas JSON saja tanpa markdown.
+        Format:
+        {{
+            "recommendations": [
+                {{
+                    "name": "...",
+                    "description": "...",
+                    "reason": "...",
+                    "category": "Alam/Budaya/Sejarah/Kuliner"
+                }}
+            ]
+        }}
+        """
+        result = generate_from_llm(prompt)
+        recommendations = parse_recommendations_response(result)
 
         req_log = RequestLog(theme=theme)
         session.add(req_log)
@@ -30,13 +37,28 @@ def create_motivations(theme: str, total: int):
 
         saved = []
 
-        for text in motivations:
+        for item in recommendations:
+            name = (item.get("name") or "").strip()
+            description = (item.get("description") or "").strip()
+            reason = (item.get("reason") or "").strip()
+            category = (item.get("category") or "").strip()
+
+            if not name:
+                continue
+
+            payload = {
+                "name": name,
+                "description": description,
+                "reason": reason,
+                "category": category,
+            }
+
             m = Motivation(
-                text=text,
+                text=json.dumps(payload, ensure_ascii=False),
                 request_id=req_log.id
             )
             session.add(m)
-            saved.append(text)
+            saved.append(payload)
 
         session.commit()
 
@@ -70,6 +92,7 @@ def get_all_motivations(page: int = 1, per_page: int = 100):
             {
                 "id": m.id,
                 "text": m.text,
+                "item": _parse_saved_item(m.text),
                 "created_at": m.created_at.isoformat()
             }
             for m in data
@@ -85,3 +108,19 @@ def get_all_motivations(page: int = 1, per_page: int = 100):
 
     finally:
         session.close()
+
+
+def _parse_saved_item(raw_text: str):
+    try:
+        parsed = json.loads(raw_text)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    return {
+        "name": raw_text,
+        "description": raw_text,
+        "reason": "",
+        "category": "",
+    }

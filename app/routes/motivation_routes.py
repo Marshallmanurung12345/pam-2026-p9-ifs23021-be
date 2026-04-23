@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+import traceback
 from app.services.motivation_service import (
     create_motivations,
     get_all_motivations
@@ -12,6 +13,7 @@ def index():
     
 
 @motivation_bp.route("/motivations/generate", methods=["POST"])
+@motivation_bp.route("/recommendations/generate", methods=["POST"])
 def generate():
     data = request.get_json()
     theme = data.get("theme")
@@ -33,16 +35,20 @@ def generate():
         result = create_motivations(theme, total)
 
         return jsonify({
-            "theme": theme,
+            "query": theme,
             "total": len(result),
+            "recommendations": result,
             "data": result
         })
 
     except Exception as e:
+        print(f"[motivation.generate] {e}")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
 @motivation_bp.route("/motivations", methods=["GET"])
+@motivation_bp.route("/recommendations", methods=["GET"])
 def get_all():
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=100, type=int)
