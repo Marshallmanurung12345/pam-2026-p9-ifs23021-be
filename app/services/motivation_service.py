@@ -2,36 +2,35 @@ from app.extensions import SessionLocal
 from app.models.motivation import Motivation
 from app.models.request_log import RequestLog
 
-def create_motivations(theme: str, total: int):
-    from app.services.llm_service import generate_from_llm
-    from app.utils.parser import parse_llm_response
+def _build_motivation_texts(theme: str, total: int):
+    clean_theme = theme.strip()
+    templates = [
+        "Tema {theme} tidak butuh langkah besar, cukup satu langkah konsisten hari ini.",
+        "Saat proses terasa berat, ingat bahwa {theme} tetap tumbuh dari usaha kecil yang diulang.",
+        "Fokus pada kemajuan di tema {theme}, bukan pada rasa takut yang datang lebih dulu.",
+        "Setiap kegagalan dalam {theme} adalah data untuk mencoba dengan cara yang lebih tepat.",
+        "Jangan tunggu sempurna untuk mulai, karena {theme} justru kuat saat kamu terus bergerak.",
+        "Disiplin dalam {theme} akan membawa hasil bahkan ketika motivasi sedang rendah.",
+        "Kalau hari ini terasa lambat, tetap lanjutkan {theme}; pelan tetap lebih baik daripada berhenti.",
+        "Keberanian terbesar dalam {theme} sering dimulai dari keputusan sederhana untuk tidak menyerah.",
+        "Beri dirimu ruang untuk belajar, karena perjalanan {theme} memang dibangun dari proses.",
+        "Konsistensi pada {theme} hari ini adalah hadiah terbaik untuk dirimu di masa depan.",
+    ]
+    return [templates[i % len(templates)].format(theme=clean_theme) for i in range(total)]
 
+def create_motivations(theme: str, total: int):
     session = SessionLocal()
 
     try:
-        prompt = f"""
-        Dalam format JSON, buat {total} kata-kata motivasi dengan tema "{theme}".
-        Format:
-        {{
-            "motivations": [
-                {{"text": "..."}}
-            ]
-        }}
-        """
+        motivations = _build_motivation_texts(theme, total)
 
-        result = generate_from_llm(prompt)
-        motivations = parse_llm_response(result)
-
-        # save request log
         req_log = RequestLog(theme=theme)
         session.add(req_log)
         session.commit()
 
         saved = []
 
-        for item in motivations:
-            text = item.get("text")
-
+        for text in motivations:
             m = Motivation(
                 text=text,
                 request_id=req_log.id
