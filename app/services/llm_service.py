@@ -34,6 +34,10 @@ def generate_from_llm(prompt: str):
     )
 
     if response.status_code != 200:
-        raise Exception(f"LLM request failed: {response.status_code} {response.text}")
+        try:
+            error_payload = response.json()
+        except Exception:
+            error_payload = response.text
+        raise Exception(f"LLM request failed: {response.status_code} {error_payload}")
 
     return response.json()

@@ -44,7 +44,11 @@ def generate():
     except Exception as e:
         print(f"[motivation.generate] {e}")
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e),
+            "query": theme,
+            "total": total,
+        }), 500
 
 
 @motivation_bp.route("/motivations", methods=["GET"])
