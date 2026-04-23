@@ -16,9 +16,13 @@ def _extract_error_message(error_payload):
         if isinstance(error, dict):
             message = error.get("message")
             status = error.get("status")
+            normalized_message = (message or "").lower()
 
-            if status == "RESOURCE_EXHAUSTED" or "quota" in (message or "").lower():
+            if status == "RESOURCE_EXHAUSTED" or "quota" in normalized_message:
                 return "Kuota layanan AI sedang habis. Coba lagi beberapa saat lagi."
+
+            if "high demand" in normalized_message or "try again later" in normalized_message:
+                return "Layanan AI sedang sibuk. Silakan coba lagi beberapa saat lagi."
 
             if message:
                 return message
