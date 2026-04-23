@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 import traceback
+from flask_jwt_extended import jwt_required
 from app.services.motivation_service import (
     create_motivations,
     get_all_motivations
@@ -15,8 +16,9 @@ def index():
 
 @motivation_bp.route("/motivations/generate", methods=["POST"])
 @motivation_bp.route("/recommendations/generate", methods=["POST"])
+@jwt_required()
 def generate():
-    data = request.get_json()
+    data = request.get_json() or {}
     theme = data.get("theme")
     total = data.get("total")
 
@@ -62,6 +64,7 @@ def generate():
 
 @motivation_bp.route("/motivations", methods=["GET"])
 @motivation_bp.route("/recommendations", methods=["GET"])
+@jwt_required()
 def get_all():
     page = request.args.get("page", default=1, type=int)
     per_page = request.args.get("per_page", default=100, type=int)
